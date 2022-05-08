@@ -35,12 +35,12 @@
     },
     "scripts": {
         "scan": [
-            "phpcs -p src",
-            "phpstan -l4 analyze"
+            "phpcs --parallel=$(nproc)",
+            "phpstan analyze"
         ],
         "test": "phpunit",
         "coverage": "XDEBUG_MODE=coverage phpunit --coverage-html coverage",
-        "infection": "XDEBUG_MODE=coverage infection",
+        "infection": "XDEBUG_MODE=coverage infection -j$(nproc)",
         "fix": [
             "phpcbf"
         ],

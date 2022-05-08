@@ -8,15 +8,30 @@
 
 declare(strict_types=1);
 
-namespace Wizacha\Test\PHPUnit;
+namespace Wizacode\ErrorProofUnserializer;
 
 use PHPUnit\Framework\TestCase;
-use Wizacode\ErrorProofUnserializer\TruncatedSerializedStringException;
-use Wizacode\ErrorProofUnserializer\ErrorProofUnserializer;
-use Wizacode\ErrorProofUnserializer\InvalidSerializedStringException;
 
 class ErrorProofUnserializerTest extends TestCase
 {
+    private const BACKTRACK_LIMIT_KEY = 'pcre.backtrack_limit';
+    private string $backtrackLimit;
+
+    public function setUp(): void
+    {
+        $this->backtrackLimit = (string) \ini_get(
+            self::BACKTRACK_LIMIT_KEY
+        );
+    }
+
+    public function tearDown(): void
+    {
+        \ini_set(
+            self::BACKTRACK_LIMIT_KEY,
+            $this->backtrackLimit
+        );
+    }
+
     /**
      * @dataProvider brokenSerializationProvider
      */
@@ -26,7 +41,13 @@ class ErrorProofUnserializerTest extends TestCase
             $expected,
             ErrorProofUnserializer::fix($input)
         );
+    }
 
+    /**
+     * @dataProvider brokenSerializationProvider
+     */
+    public function testProcess(string $input, string $expected): void
+    {
         static::assertNotEquals(
             false,
             ErrorProofUnserializer::process($input)
@@ -34,6 +55,52 @@ class ErrorProofUnserializerTest extends TestCase
     }
 
     /**
+     * @dataProvider truncatedSerializationProvider
+     */
+    public function testTruncatedSerializationThrowException(string $input): void
+    {
+        $this->expectException(TruncatedSerializedStringException::class);
+        $this->expectExceptionMessage('Truncated serialized string');
+
+        ErrorProofUnserializer::process($input);
+    }
+
+    /**
+     * @dataProvider invalidSerializationProvider
+     */
+    public function testInvalidSerializationThrowException(string $input): void
+    {
+        $this->expectException(InvalidSerializedStringException::class);
+        $this->expectExceptionMessage('Invalid serialized string');
+
+        ErrorProofUnserializer::process($input);
+    }
+
+    public function testEarlyReturnValidSerialization(): void
+    {
+        static::assertEquals(
+            'hello world',
+            ErrorProofUnserializer::process('s:11:"hello world";')
+        );
+    }
+
+    public function testRegexErrorThrowException(): void
+    {
+        \ini_set(self::BACKTRACK_LIMIT_KEY, '10');
+
+        $this->expectException(RegexStringException::class);
+        $this->expectExceptionMessage('Backtrack limit exhausted');
+
+        ErrorProofUnserializer::fix(
+            \sprintf(
+                's:1:"%s";',
+                str_repeat('hello', 2 ** 10)
+            )
+        );
+    }
+
+    /**
+     *
      * @return array<string, array<int,string>>
      */
     public function brokenSerializationProvider(): array
@@ -103,17 +170,6 @@ class ErrorProofUnserializerTest extends TestCase
     }
 
     /**
-     * @dataProvider truncatedSerializationProvider
-     */
-    public function testTruncatedSerializationThrowException(string $input): void
-    {
-        $this->expectException(TruncatedSerializedStringException::class);
-        $this->expectExceptionMessage('Truncated serialized string');
-
-        ErrorProofUnserializer::process($input);
-    }
-
-    /**
      * @return array<string, array<int, string>>
      */
     public function truncatedSerializationProvider(): array
@@ -122,17 +178,6 @@ class ErrorProofUnserializerTest extends TestCase
             'cutted' => ['s:10:"hell'],
             'not serialization at all' => ['👹👹👹👹👹👹'],
         ];
-    }
-
-    /**
-     * @dataProvider invalidSerializationProvider
-     */
-    public function testInvalidSerializationThrowException(string $input): void
-    {
-        $this->expectException(InvalidSerializedStringException::class);
-        $this->expectExceptionMessage('Invalid serialized string');
-
-        ErrorProofUnserializer::process($input);
     }
 
     /**
@@ -145,14 +190,5 @@ class ErrorProofUnserializerTest extends TestCase
             'look a like' => ['u:5:"hello";'],
             'kinda near' => ['s:i:"hello";']
         ];
-    }
-
-    public function testEarlyReturnValidSerialization(): void
-    {
-
-        static::assertEquals(
-            'hello world',
-            ErrorProofUnserializer::process('s:11:"hello world";')
-        );
     }
 }

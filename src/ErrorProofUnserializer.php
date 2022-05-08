@@ -73,7 +73,7 @@ class ErrorProofUnserializer
      */
     private function repairIncorrectLength(): string
     {
-        return \preg_replace_callback(
+        $repairedString =  \preg_replace_callback(
             $this->getPattern(),
             function (array $matches) {
                 $actualString = $matches['actual_string'];
@@ -87,6 +87,15 @@ class ErrorProofUnserializer
             },
             $this->serialized
         );
+
+        if (\is_null($repairedString)) {
+            throw new RegexStringException(
+                \preg_last_error_msg(),
+                \preg_last_error()
+            );
+        }
+
+        return $repairedString;
     }
 
     private function getPattern(): string
