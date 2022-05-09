@@ -1,0 +1,101 @@
+version: 2.1
+executors:
+  php:
+    docker:
+      - image: php:8.1-alpine
+    working_directory: ~/repo
+
+jobs:
+  composer:
+    executor: php
+    steps:
+      - run:
+          name: Install alpine requirements for checkout
+          command: apk add git openssh-client curl
+      - checkout
+      - restore_cache:
+          key: composer-{{ checksum "composer.json" }}-{{ checksum "composer.lock" }}
+      - run:
+          name: composer
+          command: |
+            if [[ ! -f vendor/autoload.php ]]; then
+                curl https://getcomposer.org/composer-stable.phar --location --silent  --output /usr/bin/composer; \
+                chmod +x /usr/bin/composer; \
+                composer install --no-progress --no-interaction; \
+            fi
+      - save_cache:
+          key: composer-{{ checksum "composer.json" }}-{{ checksum "composer.lock" }}
+          paths:
+            - ./vendor
+      - persist_to_workspace:
+          root: .
+          paths:
+            - vendor
+
+  phpcs:
+    executor: php
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: scan
+          command: vendor/bin/phpcs --parallel=$(nproc)
+
+  phpstan:
+    executor: php
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: scan
+          command: vendor/bin/phpstan
+
+  phpunit:
+    executor: php
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: test
+          command: phpdbg -qrr vendor/bin/phpunit --coverage-html=build/coverage/html --coverage-xml=build/coverage/xml --log-junit=build/coverage/xml/junit.xml
+          environment:
+            XDEBUG_MODE: coverage
+      - store_artifacts:
+          path: build/coverage/html
+      - persist_to_workspace:
+          root: .
+          paths:
+            - build/coverage/xml
+
+  infection:
+    executor: php
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: infection
+          command: vendor/bin/infection -j$(nproc) --coverage=build/coverage/xml
+          environment:
+            XDEBUG_MODE: coverage
+
+workflows:
+  version: 2.
+  Code quality:
+    jobs:
+      - composer
+      - phpcs:
+          requires:
+            - composer
+      - phpstan:
+          requires:
+            - composer
+      - phpunit:
+          requires:
+            - composer
+      - infection:
+          requires:
+            - phpunit
