@@ -1,13 +1,14 @@
 {
     "name": "wizacode/php-error-proof-unserializer",
-    "keyword": [
+    "description": "last chance php unserializer",
+    "keywords": [
         "php",
         "unserialize",
         "error",
         "recover",
         "string length"
     ],
-    "licence": "MIT",
+    "license": "MIT",
     "authors": [
         {
             "name": "Wizaplace DevTeam ",
