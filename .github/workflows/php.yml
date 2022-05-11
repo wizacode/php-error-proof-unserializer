@@ -39,6 +39,9 @@ jobs:
 
       - name: phpunit-coverage-badge
         uses: timkrase/phpunit-coverage-badge@v1.2.0
+        with:
+          report_type: html
+          report: coverage/index.html
 
       - name: Test infection
         run: composer infection
