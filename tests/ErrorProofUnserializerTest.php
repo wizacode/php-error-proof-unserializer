@@ -89,13 +89,18 @@ class ErrorProofUnserializerTest extends TestCase
             'hello world',
             ErrorProofUnserializer::process('s:11:"hello world";')
         );
+
+        static::assertEquals(
+            false,
+            ErrorProofUnserializer::process('b:0;')
+        );
     }
 
     public function testRegexErrorThrowException(): void
     {
         \ini_set(self::BACKTRACK_LIMIT_KEY, '10');
 
-        $this->expectException(RegexStringException::class);
+        $this->expectException(PregErrorException::class);
         $this->expectExceptionMessage('Backtrack limit exhausted');
 
         ErrorProofUnserializer::fix(

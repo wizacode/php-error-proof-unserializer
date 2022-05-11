@@ -42,7 +42,7 @@ class ErrorProofUnserializer
     /**
      * @return mixed
      * @throws TruncatedSerializedStringException
-     * @throws RegexStringException
+     * @throws PregErrorException
      * @throws InvalidSerializedStringException
      */
     public function unserialize()
@@ -56,7 +56,10 @@ class ErrorProofUnserializer
         /**
          * early return properly unserialized string
          */
-        if ($unserialized !== false) {
+        if (
+            $unserialized !== false
+            || $this->serialized === 'b:0;'
+        ) {
             return $unserialized;
         }
 
@@ -92,7 +95,7 @@ class ErrorProofUnserializer
         );
 
         if (\is_null($repairedString)) {
-            throw new RegexStringException(
+            throw new PregErrorException(
                 \preg_last_error_msg(),
                 \preg_last_error()
             );
