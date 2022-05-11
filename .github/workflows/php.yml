@@ -37,11 +37,12 @@ jobs:
       - name: Test phpunit
         run: composer coverage
 
-      - name: phpunit-coverage-badge
-        uses: timkrase/phpunit-coverage-badge@v1.2.0
+      - name: Monitor coverage
+        if: ! contains(github.event.pull_request.user.login, 'dependabot[bot]')
+        uses: slavcodev/coverage-monitor-action@v1
         with:
-          report_type: html
-          report: coverage/index.html
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          coverage_path: 'coverage/clover.xml'
 
       - name: Test infection
         run: composer infection
