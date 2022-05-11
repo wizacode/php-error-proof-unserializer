@@ -40,7 +40,7 @@
             "phpstan analyze"
         ],
         "test": "phpunit",
-        "coverage": "XDEBUG_MODE=coverage phpunit --coverage-html coverage",
+        "coverage": "XDEBUG_MODE=coverage phpunit",
         "infection": "XDEBUG_MODE=coverage infection -j$(nproc) -s",
         "fix": [
             "phpcbf"
