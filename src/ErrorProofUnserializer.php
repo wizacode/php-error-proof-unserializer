@@ -3,7 +3,7 @@
 /**
  * @author    Wizacha DevTeam <dev@wizacha.com>
  * @copyright Copyright (c) Wizacha
- * @license   ProprietaryWizacode\
+ * @license   MIT
  */
 
 declare(strict_types=1);
@@ -41,8 +41,11 @@ class ErrorProofUnserializer
 
     /**
      * @return mixed
+     * @throws TruncatedSerializedStringException
+     * @throws PregErrorException
+     * @throws InvalidSerializedStringException
      */
-    private function unserialize()
+    public function unserialize()
     {
         if ($this->isTruncated()) {
             throw new TruncatedSerializedStringException();
@@ -53,7 +56,10 @@ class ErrorProofUnserializer
         /**
          * early return properly unserialized string
          */
-        if ($unserialized !== false) {
+        if (
+            $unserialized !== false
+            || $this->serialized === 'b:0;'
+        ) {
             return $unserialized;
         }
 
@@ -71,7 +77,7 @@ class ErrorProofUnserializer
     /**
      * Attempt to repair incorrect length in serialized data
      */
-    private function repairIncorrectLength(): string
+    public function repairIncorrectLength(): string
     {
         $repairedString =  \preg_replace_callback(
             $this->getPattern(),
@@ -89,7 +95,7 @@ class ErrorProofUnserializer
         );
 
         if (\is_null($repairedString)) {
-            throw new RegexStringException(
+            throw new PregErrorException(
                 \preg_last_error_msg(),
                 \preg_last_error()
             );
