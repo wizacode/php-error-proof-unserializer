@@ -41,8 +41,11 @@ class ErrorProofUnserializer
 
     /**
      * @return mixed
+     * @throws TruncatedSerializedStringException
+     * @throws RegexStringException
+     * @throws InvalidSerializedStringException
      */
-    private function unserialize()
+    public function unserialize()
     {
         if ($this->isTruncated()) {
             throw new TruncatedSerializedStringException();
@@ -71,7 +74,7 @@ class ErrorProofUnserializer
     /**
      * Attempt to repair incorrect length in serialized data
      */
-    private function repairIncorrectLength(): string
+    public function repairIncorrectLength(): string
     {
         $repairedString =  \preg_replace_callback(
             $this->getPattern(),

@@ -41,7 +41,7 @@
         ],
         "test": "phpunit",
         "coverage": "XDEBUG_MODE=coverage phpunit --coverage-html coverage",
-        "infection": "XDEBUG_MODE=coverage infection -j$(nproc)",
+        "infection": "XDEBUG_MODE=coverage infection -j$(nproc) -s",
         "fix": [
             "phpcbf"
         ],

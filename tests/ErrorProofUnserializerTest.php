@@ -37,6 +37,7 @@ class ErrorProofUnserializerTest extends TestCase
      */
     public function testFix(string $input, string $expectedString, mixed $expectedData): void
     {
+        // static methods
         static::assertEquals(
             $expectedString,
             ErrorProofUnserializer::fix($input)
@@ -45,6 +46,18 @@ class ErrorProofUnserializerTest extends TestCase
         static::assertEquals(
             $expectedData,
             ErrorProofUnserializer::process($input)
+        );
+
+        // public methods
+        $unserializer = new ErrorProofUnserializer($input);
+        static::assertEquals(
+            $expectedData,
+            $unserializer->unserialize()
+        );
+
+        static::assertEquals(
+            $expectedString,
+            $unserializer->repairIncorrectLength()
         );
     }
 
